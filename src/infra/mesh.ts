@@ -395,11 +395,15 @@ export class GentleMeshClient {
    */
   private handleParsedEvent(
     eventType: string,
-    payload: Record<string, unknown>,
+    rawPayload: Record<string, unknown>,
     _accumulatedText: string,
     appendDelta: (text: string) => void
   ): void {
     const cwd = this.activeCwd;
+    // Unwrap nested protocol payload envelope if present (e.g. { type: "...", payload: { ... } })
+    const payload = (rawPayload.payload && typeof rawPayload.payload === 'object')
+      ? (rawPayload.payload as Record<string, unknown>)
+      : rawPayload;
 
     switch (eventType) {
       case 'thought': {
