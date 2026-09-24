@@ -1,0 +1,578 @@
+import test from 'node:test';
+import assert from 'node:assert';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import enJson from '@shared/locales/en.json';
+import esJson from '@shared/locales/es.json';
+import {
+  listWorkspaceDirPi,
+  readWorkspaceFilePi,
+  getWorkspaceGitStatusPi,
+  getWorkspaceFileDiffPi,
+} from '@infra/bridge';
+import { parseUnifiedDiff } from '@features/workspace/FileViewerModal';
+import {
+  computeDirChangesMap,
+  computeTotalGitChanges,
+  updateDirChildrenOnRefresh,
+  pruneExpandedDirsOnRefresh,
+} from '@features/workspace/FileTree';
+import { FileSearchBar } from '@features/workspace/components/FileSearchBar';
+import type {
+  WorkspaceEntry,
+  WorkspaceFileContent,
+  WorkspaceGitStatus,
+  WorkspaceFileDiff,
+} from '@core/types/workspace';
+
+test('Bridge: listWorkspaceDirPi invokes list_workspace_dir command with payload', async () => {
+  const calls: { cmd: string; args?: Record<string, unknown> }[] = [];
+  const mockEntries: WorkspaceEntry[] = [
+    {
+      name: 'src',
+      relativePath: 'src',
+      isDir: true,
+      size: null,
+      extension: null,
+    },
+    {
+      name: 'README.md',
+      relativePath: 'README.md',
+      isDir: false,
+      size: 1024,
+      extension: 'md',
+    },
+  ];
+
+  const mockInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+    calls.push({ cmd, args });
+    return mockEntries as T;
+  };
+
+  const res = await listWorkspaceDirPi(
+    { workingDirectory: 'C:/project', relativePath: 'src' },
+    mockInvoke
+  );
+
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].cmd, 'list_workspace_dir');
+  assert.deepStrictEqual(calls[0].args, {
+    payload: { workingDirectory: 'C:/project', relativePath: 'src' },
+  });
+  assert.strictEqual(res.length, 2);
+  assert.strictEqual(res[0].name, 'src');
+  assert.strictEqual(res[1].name, 'README.md');
+});
+
+test('Bridge: readWorkspaceFilePi invokes read_workspace_file command with payload', async () => {
+  const calls: { cmd: string; args?: Record<string, unknown> }[] = [];
+  const mockContent: WorkspaceFileContent = {
+    relativePath: 'src/main.rs',
+    name: 'main.rs',
+    content: 'fn main() {}',
+    size: 12,
+    isBinary: false,
+    extension: 'rs',
+  };
+
+  const mockInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+    calls.push({ cmd, args });
+    return mockContent as T;
+  };
+
+  const res = await readWorkspaceFilePi('src/main.rs', 'C:/project', mockInvoke);
+
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].cmd, 'read_workspace_file');
+  assert.deepStrictEqual(calls[0].args, {
+    payload: { relativePath: 'src/main.rs', workingDirectory: 'C:/project' },
+  });
+  assert.strictEqual(res.name, 'main.rs');
+  assert.strictEqual(res.content, 'fn main() {}');
+  assert.strictEqual(res.size, 12);
+  assert.strictEqual(res.isBinary, false);
+});
+
+test('File tree: search filtering matches entry name and relative path', () => {
+  const entries: WorkspaceEntry[] = [
+    { name: 'src', relativePath: 'src', isDir: true },
+    { name: 'App.tsx', relativePath: 'src/App.tsx', isDir: false, extension: 'tsx' },
+    { name: 'commands.rs', relativePath: 'src-tauri/src/commands.rs', isDir: false, extension: 'rs' },
+    { name: 'package.json', relativePath: 'package.json', isDir: false, extension: 'json' },
+  ];
+
+  const filter = (query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return entries;
+    return entries.filter(
+      (e) => e.name.toLowerCase().includes(q) || e.relativePath.toLowerCase().includes(q)
+    );
+  };
+
+  assert.strictEqual(filter('app').length, 1);
+  assert.strictEqual(filter('app')[0].name, 'App.tsx');
+
+  assert.strictEqual(filter('tauri').length, 1);
+  assert.strictEqual(filter('tauri')[0].name, 'commands.rs');
+
+  assert.strictEqual(filter('json').length, 1);
+  assert.strictEqual(filter('nonexistent').length, 0);
+  assert.strictEqual(filter('   ').length, 4);
+});
+
+test('WorkspaceFileContent: correctly represents binary and text files', () => {
+  const textFile: WorkspaceFileContent = {
+    relativePath: 'README.md',
+    name: 'README.md',
+    content: '# Hello',
+    size: 7,
+    isBinary: false,
+    extension: 'md',
+  };
+
+  const binFile: WorkspaceFileContent = {
+    relativePath: 'image.png',
+    name: 'image.png',
+    content: '',
+    size: 2048,
+    isBinary: true,
+    extension: 'png',
+  };
+
+  assert.strictEqual(textFile.isBinary, false);
+  assert.strictEqual(textFile.content.length > 0, true);
+  assert.strictEqual(binFile.isBinary, true);
+  assert.strictEqual(binFile.content, '');
+});
+
+test('Bridge: getWorkspaceGitStatusPi invokes get_workspace_git_status', async () => {
+  const calls: { cmd: string; args?: Record<string, unknown> }[] = [];
+  const mockStatus: WorkspaceGitStatus = {
+    isRepo: true,
+    repoName: 'pi-viewer',
+    branch: 'main',
+    modifiedFiles: ['src/App.tsx'],
+    addedFiles: ['src/FileTree.tsx'],
+    untrackedFiles: ['odd/tasks.md'],
+  };
+
+  const mockInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+    calls.push({ cmd, args });
+    return mockStatus as T;
+  };
+
+  const res = await getWorkspaceGitStatusPi('C:/project', mockInvoke);
+
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].cmd, 'get_workspace_git_status');
+  assert.deepStrictEqual(calls[0].args, { payload: { workingDirectory: 'C:/project' } });
+  assert.strictEqual(res.isRepo, true);
+  assert.strictEqual(res.repoName, 'pi-viewer');
+  assert.strictEqual(res.branch, 'main');
+  assert.strictEqual(res.modifiedFiles.length, 1);
+  assert.strictEqual(res.addedFiles.length, 1);
+  assert.strictEqual(res.untrackedFiles.length, 1);
+});
+
+test('Bridge: getWorkspaceFileDiffPi invokes get_workspace_file_diff', async () => {
+  const calls: { cmd: string; args?: Record<string, unknown> }[] = [];
+  const mockDiff: WorkspaceFileDiff = {
+    relativePath: 'src/App.tsx',
+    hasDiff: true,
+    diff: '+import { FileTree } from "./FileTree";\n',
+  };
+
+  const mockInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+    calls.push({ cmd, args });
+    return mockDiff as T;
+  };
+
+  const res = await getWorkspaceFileDiffPi('src/App.tsx', 'C:/project', mockInvoke);
+
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].cmd, 'get_workspace_file_diff');
+  assert.deepStrictEqual(calls[0].args, {
+    payload: { relativePath: 'src/App.tsx', workingDirectory: 'C:/project' },
+  });
+  assert.strictEqual(res.hasDiff, true);
+  assert.strictEqual(res.diff.includes('import'), true);
+});
+
+test('parseUnifiedDiff: strips Git metadata headers and tracks line numbers accurately', () => {
+  const rawDiff = [
+    'diff --git a/src/App.tsx b/src/App.tsx',
+    'index e827ce8..b06fb0e 100644',
+    '--- a/src/App.tsx',
+    '+++ b/src/App.tsx',
+    '@@ -10,4 +10,5 @@',
+    " import React from 'react';",
+    "-import { OldComponent } from './Old';",
+    "+import { NewComponent } from './New';",
+    "+import { AnotherComponent } from './Another';",
+    " import { useTheme } from './theme';",
+  ].join('\n');
+
+  const parsed = parseUnifiedDiff(rawDiff);
+
+  // 1. Should have 1 hunk header + 5 code lines (no diff --git, index, ---, +++)
+  assert.strictEqual(parsed.length, 6);
+
+  // 2. First line is hunk header
+  assert.strictEqual(parsed[0].type, 'hunk');
+  assert.strictEqual(parsed[0].text.startsWith('@@'), true);
+
+  // 3. Second line is context: line 10 in both old and new
+  assert.strictEqual(parsed[1].type, 'context');
+  assert.strictEqual(parsed[1].oldLineNumber, 10);
+  assert.strictEqual(parsed[1].newLineNumber, 10);
+  assert.strictEqual(parsed[1].text, "import React from 'react';");
+
+  // 4. Third line is deletion: line 11 in old, undefined in new
+  assert.strictEqual(parsed[2].type, 'del');
+  assert.strictEqual(parsed[2].oldLineNumber, 11);
+  assert.strictEqual(parsed[2].newLineNumber, undefined);
+  assert.strictEqual(parsed[2].text, "import { OldComponent } from './Old';");
+
+  // 5. Fourth line is addition: undefined in old, line 11 in new
+  assert.strictEqual(parsed[3].type, 'add');
+  assert.strictEqual(parsed[3].oldLineNumber, undefined);
+  assert.strictEqual(parsed[3].newLineNumber, 11);
+  assert.strictEqual(parsed[3].text, "import { NewComponent } from './New';");
+
+  // 6. Fifth line is second addition: undefined in old, line 12 in new
+  assert.strictEqual(parsed[4].type, 'add');
+  assert.strictEqual(parsed[4].oldLineNumber, undefined);
+  assert.strictEqual(parsed[4].newLineNumber, 12);
+  assert.strictEqual(parsed[4].text, "import { AnotherComponent } from './Another';");
+
+  // 7. Sixth line is context: line 12 in old, line 13 in new
+  assert.strictEqual(parsed[5].type, 'context');
+  assert.strictEqual(parsed[5].oldLineNumber, 12);
+  assert.strictEqual(parsed[5].newLineNumber, 13);
+  assert.strictEqual(parsed[5].text, "import { useTheme } from './theme';");
+});
+
+test('parseUnifiedDiff: returns empty array for empty diff or non-diff text', () => {
+  assert.deepStrictEqual(parseUnifiedDiff(''), []);
+  assert.deepStrictEqual(parseUnifiedDiff('   \n  '), []);
+  assert.deepStrictEqual(parseUnifiedDiff('diff --git a/file b/file\nindex 123..456\n'), []);
+});
+
+test('computeDirChangesMap: counts changed files per ancestor directory', () => {
+  const gitStatus: WorkspaceGitStatus = {
+    isRepo: true,
+    repoName: 'pi-viewer',
+    branch: 'main',
+    modifiedFiles: ['src/App.tsx', 'src/styles.css', 'src-tauri/src/commands.rs'],
+    addedFiles: ['src/FileTree.tsx', 'src-tauri/src/lib.rs'],
+    untrackedFiles: ['odd/tasks/workspace-file-tree.md', 'README.md'],
+  };
+
+  const map = computeDirChangesMap(gitStatus);
+
+  // 'src' has: App.tsx, styles.css, FileTree.tsx -> 3
+  assert.strictEqual(map['src'], 3);
+
+  // 'src-tauri' has: commands.rs, lib.rs -> 2
+  assert.strictEqual(map['src-tauri'], 2);
+
+  // 'src-tauri/src' has: commands.rs, lib.rs -> 2
+  assert.strictEqual(map['src-tauri/src'], 2);
+
+  // 'odd' has: workspace-file-tree.md -> 1
+  assert.strictEqual(map['odd'], 1);
+
+  // 'odd/tasks' has: workspace-file-tree.md -> 1
+  assert.strictEqual(map['odd/tasks'], 1);
+
+  // Root file 'README.md' has no ancestor dir
+  assert.strictEqual(map['README.md'], undefined);
+});
+
+test('computeDirChangesMap: handles null or non-repo status gracefully', () => {
+  assert.deepStrictEqual(computeDirChangesMap(null), {});
+  assert.deepStrictEqual(
+    computeDirChangesMap({
+      isRepo: false,
+      modifiedFiles: [],
+      addedFiles: [],
+      untrackedFiles: [],
+    }),
+    {}
+  );
+});
+
+test('computeTotalGitChanges: returns 0 when status is null, undefined, or isRepo is false', () => {
+  assert.strictEqual(computeTotalGitChanges(null), 0);
+  assert.strictEqual(computeTotalGitChanges(undefined as unknown as WorkspaceGitStatus | null), 0);
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: false,
+      modifiedFiles: ['src/App.tsx'],
+      addedFiles: ['src/New.tsx'],
+      untrackedFiles: ['temp.log'],
+    }),
+    0
+  );
+});
+
+test('computeTotalGitChanges: correctly sums modifiedFiles, addedFiles, and untrackedFiles', () => {
+  const status: WorkspaceGitStatus = {
+    isRepo: true,
+    repoName: 'pi-viewer',
+    branch: 'main',
+    modifiedFiles: ['src/App.tsx', 'src/app.css'],
+    addedFiles: ['src/features/NewFeature.tsx'],
+    untrackedFiles: ['notes.txt', 'scratch.md'],
+  };
+  assert.strictEqual(computeTotalGitChanges(status), 5);
+});
+
+test('computeTotalGitChanges: handles missing or empty arrays cleanly', () => {
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: true,
+      modifiedFiles: [],
+      addedFiles: [],
+      untrackedFiles: [],
+    }),
+    0
+  );
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: true,
+    } as unknown as WorkspaceGitStatus),
+    0
+  );
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: true,
+      modifiedFiles: ['src/App.tsx'],
+    } as unknown as WorkspaceGitStatus),
+    1
+  );
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: true,
+      addedFiles: ['src/New.tsx'],
+    } as unknown as WorkspaceGitStatus),
+    1
+  );
+  assert.strictEqual(
+    computeTotalGitChanges({
+      isRepo: true,
+      untrackedFiles: ['temp.log'],
+    } as unknown as WorkspaceGitStatus),
+    1
+  );
+});
+
+/* ========================================================================= */
+/* FileTree Auto-Refresh & Expanded Dirs Revalidation Tests                   */
+/* ========================================================================= */
+
+test('updateDirChildrenOnRefresh: updates existing and adds new child scans', () => {
+  const prevChildren: Record<string, WorkspaceEntry[]> = {
+    src: [
+      { name: 'App.tsx', relativePath: 'src/App.tsx', isDir: false },
+    ],
+    oldDir: [
+      { name: 'deleted.txt', relativePath: 'oldDir/deleted.txt', isDir: false },
+    ],
+  };
+
+  const results = [
+    {
+      dirPath: 'src',
+      children: [
+        { name: 'App.tsx', relativePath: 'src/App.tsx', isDir: false },
+        { name: 'FileTree.tsx', relativePath: 'src/FileTree.tsx', isDir: false },
+      ],
+    },
+    {
+      dirPath: 'docs',
+      children: [
+        { name: 'README.md', relativePath: 'docs/README.md', isDir: false },
+      ],
+    },
+    {
+      dirPath: 'oldDir',
+      children: undefined, // Failed / deleted
+    },
+  ];
+
+  const updated = updateDirChildrenOnRefresh(prevChildren, results);
+
+  // 'src' updated with both files
+  assert.strictEqual(updated['src'].length, 2);
+  assert.strictEqual(updated['src'][1].name, 'FileTree.tsx');
+
+  // 'docs' added
+  assert.strictEqual(updated['docs'].length, 1);
+  assert.strictEqual(updated['docs'][0].name, 'README.md');
+
+  // 'oldDir' removed because children is undefined (failed)
+  assert.strictEqual(updated['oldDir'], undefined);
+});
+
+test('pruneExpandedDirsOnRefresh: prunes failed or deleted directories from expanded set', () => {
+  const prevDirs = new Set(['src', 'src-tauri', 'removed-folder']);
+
+  const results = [
+    { dirPath: 'src', success: true },
+    { dirPath: 'src-tauri', success: true },
+    { dirPath: 'removed-folder', success: false },
+  ];
+
+  const pruned = pruneExpandedDirsOnRefresh(prevDirs, results);
+
+  assert.strictEqual(pruned.has('src'), true);
+  assert.strictEqual(pruned.has('src-tauri'), true);
+  assert.strictEqual(pruned.has('removed-folder'), false);
+  assert.strictEqual(pruned.size, 2);
+
+  // If all succeeded, returns same reference
+  const allSuccess = [
+    { dirPath: 'src', success: true },
+    { dirPath: 'src-tauri', success: true },
+  ];
+  const unchanged = pruneExpandedDirsOnRefresh(pruned, allSuccess);
+  assert.strictEqual(unchanged, pruned);
+});
+
+test('i18n: file tree and auto-refresh settings keys exist with exact parity in en.json and es.json', () => {
+  const requiredKeys = [
+    'file_tree.title',
+    'file_tree.search_placeholder',
+    'file_tree.refresh',
+    'file_tree.loading',
+    'file_tree.search_matches',
+    'file_tree.no_results',
+    'file_tree.empty',
+    'file_tree.git_repo',
+    'file_tree.git_branch',
+    'file_tree.git_modified',
+    'file_tree.git_added',
+    'file_tree.git_untracked',
+    'file_tree.git_changed_count',
+    'file_tree.git_dir_changes',
+    'settings.file_tree_heading',
+    'settings.file_tree_hint',
+    'settings.file_tree_interval_label',
+    'settings.file_tree_interval_subtext',
+    'settings.file_tree_interval_disabled',
+    'settings.file_tree_interval_5s',
+    'settings.file_tree_interval_10s',
+    'settings.file_tree_interval_15s',
+    'settings.file_tree_interval_30s',
+    'settings.file_tree_interval_60s',
+  ];
+
+  for (const key of requiredKeys) {
+    assert.ok(key in enJson, `Key ${key} missing from en.json`);
+    assert.ok(key in esJson, `Key ${key} missing from es.json`);
+
+    const enVal = (enJson as Record<string, string>)[key];
+    const esVal = (esJson as Record<string, string>)[key];
+
+    assert.ok(typeof enVal === 'string' && enVal.trim().length > 0, `en.json ${key} must be non-empty string`);
+    assert.ok(typeof esVal === 'string' && esVal.trim().length > 0, `es.json ${key} must be non-empty string`);
+  }
+
+  // Total dictionary key parity
+  const enKeys = Object.keys(enJson).sort();
+  const esKeys = Object.keys(esJson).sort();
+  assert.deepStrictEqual(enKeys, esKeys, 'en.json and es.json must have exact 1:1 key parity');
+});
+
+test('FileSearchBar: renders empty state, wrapper, svg icon, and input attributes', () => {
+  assert.strictEqual(typeof FileSearchBar, 'function');
+
+  const element = React.createElement(FileSearchBar, {
+    value: '',
+    onChange: () => {},
+    placeholder: 'Search files...',
+    clearAriaLabel: 'Clear file search',
+    className: 'custom-tree-search',
+    autoFocus: true,
+  });
+
+  const markup = renderToStaticMarkup(element);
+
+  // Outer container and classes
+  assert.ok(markup.includes('search-input-wrapper custom-tree-search'));
+  // SVG icon
+  assert.ok(markup.includes('search-icon'));
+  assert.ok(markup.includes('aria-hidden="true"'));
+  // Input attributes
+  assert.ok(markup.includes('class="sidebar-search-input"'));
+  assert.ok(markup.includes('placeholder="Search files..."'));
+  assert.ok(markup.includes('aria-label="Search files..."'));
+  assert.ok(markup.includes('value=""'));
+  // Clear button is not rendered when value is empty
+  assert.ok(!markup.includes('search-clear-btn'));
+});
+
+test('FileSearchBar: renders query state with clear button containing svg cross, handles onChange and clear click', () => {
+  let changedVal = '';
+  const element = React.createElement(FileSearchBar, {
+    value: 'Cargo.toml',
+    onChange: (val: string) => {
+      changedVal = val;
+    },
+    placeholder: 'Search files...',
+    clearAriaLabel: 'Clear file search',
+  });
+
+  const markup = renderToStaticMarkup(element);
+  assert.ok(markup.includes('value="Cargo.toml"'));
+  assert.ok(markup.includes('search-clear-btn'));
+  assert.ok(markup.includes('aria-label="Clear file search"'));
+  // Svg cross lines
+  assert.ok(markup.includes('line x1="18" y1="6" x2="6" y2="18"'));
+
+  // Direct component tree test for event callbacks
+  const instance = FileSearchBar({
+    value: 'Cargo.toml',
+    onChange: (val: string) => {
+      changedVal = val;
+    },
+    placeholder: 'Search files...',
+    clearAriaLabel: 'Clear file search',
+  });
+
+  assert.ok(React.isValidElement(instance));
+  assert.strictEqual(instance.props.className, 'search-input-wrapper');
+
+  const children = React.Children.toArray(instance.props.children);
+  const inputEl = children.find(
+    (c): c is React.ReactElement => React.isValidElement(c) && c.type === 'input'
+  );
+  assert.ok(inputEl);
+  inputEl.props.onChange({ target: { value: 'README.md' } });
+  assert.strictEqual(changedVal, 'README.md');
+
+  const clearBtn = children.find(
+    (c): c is React.ReactElement => React.isValidElement(c) && c.type === 'button'
+  );
+  assert.ok(clearBtn);
+  assert.strictEqual(clearBtn.props['aria-label'], 'Clear file search');
+  clearBtn.props.onClick();
+  assert.strictEqual(changedVal, '');
+});
+
+test('FileSearchBar: uses default clearAriaLabel when omitted', () => {
+  const instance = FileSearchBar({
+    value: 'src/main.rs',
+    onChange: () => {},
+    placeholder: 'Search...',
+  });
+
+  assert.ok(React.isValidElement(instance));
+  const children = React.Children.toArray(instance.props.children);
+  const clearBtn = children.find(
+    (c): c is React.ReactElement => React.isValidElement(c) && c.type === 'button'
+  );
+  assert.ok(clearBtn);
+  assert.strictEqual(clearBtn.props['aria-label'], 'Clear search');
+});

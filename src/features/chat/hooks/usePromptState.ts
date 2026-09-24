@@ -1,0 +1,155 @@
+import { useState } from 'react';
+import {
+  abortPi,
+  sendPromptPi,
+  type PromptImageAttachment,
+} from '@infra/bridge';
+import { generatePromptRequestId } from '@core/protocol';
+import type { ChatAction } from '@core/reducer';
+import type { AttachedFile } from '../types';
+
+export interface UsePromptStateOptions {
+  isReadyToSend: boolean;
+  isBusy: boolean;
+  pendingPromptId: string | null;
+  dispatch: React.Dispatch<ChatAction>;
+  /**
+   * T5a's scroll primitive (`useChatScroll`'s `pinAndJumpToBottom`), injected rather than
+   * imported directly so this hook stays inside `features/chat` without reaching into
+   * another cluster's internals.
+   */
+  pinAndJumpToBottom: () => void;
+}
+
+/**
+ * Prompt cluster: the textarea draft, send/abort handlers, and the Enter-to-send key binding.
+ */
+export function usePromptState({
+  isReadyToSend,
+  isBusy,
+  pendingPromptId,
+  dispatch,
+  pinAndJumpToBottom,
+}: UsePromptStateOptions) {
+  const [prompt, setPrompt] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+
+  const addAttachedFiles = (files: AttachedFile[]) => {
+    setAttachedFiles((prev) => [...prev, ...files]);
+  };
+
+  const removeAttachedFile = (id: string) => {
+    setAttachedFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const clearAttachedFiles = () => {
+    setAttachedFiles([]);
+  };
+
+  // handleSend/handleAbort/handleKeyDown stay plain functions, recreated every render,
+  // exactly as they were in App.tsx (they were never wrapped in useCallback there).
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = prompt.trim();
+    const hasAttachments = attachedFiles.length > 0;
+    if ((!trimmed && !hasAttachments) || !isReadyToSend) return;
+
+    const defaultAttachmentText = attachedFiles.some((f) => f.type === 'image')
+      ? '(see attached image)'
+      : '(see attached file)';
+    const reqId = generatePromptRequestId();
+    dispatch({
+      type: 'PROMPT_SUBMIT',
+      payload: { id: reqId, message: trimmed || defaultAttachmentText },
+    });
+
+    const imageAttachments: PromptImageAttachment[] = attachedFiles
+      .filter((f) => f.type === 'image' && f.data)
+      .map((f) => ({
+        type: 'image',
+        data: f.data!,
+        mimeType: f.mimeType,
+      }));
+
+    const textFiles = attachedFiles.filter((f) => f.type === 'text' && f.content !== undefined);
+    let messageToSend = trimmed;
+    if (textFiles.length > 0) {
+      const fileBlocks = textFiles
+        .map((f) => `<file name="${f.name}">\n${f.content}\n</file>`)
+        .join('\n\n');
+      messageToSend = messageToSend ? `${messageToSend}\n\n${fileBlocks}` : fileBlocks;
+    }
+    const otherFiles = attachedFiles.filter((f) => f.type !== 'image' && f.type !== 'text');
+    if (otherFiles.length > 0) {
+      const otherBlocks = otherFiles
+        .map((f) => `<attached_${f.type} name="${f.name}" size="${f.size}" mime="${f.mimeType}" />`)
+        .join('\n');
+      messageToSend = messageToSend ? `${messageToSend}\n\n${otherBlocks}` : otherBlocks;
+    }
+    if (!messageToSend && imageAttachments.length > 0) {
+      messageToSend = '(see attached image)';
+    } else if (!messageToSend && attachedFiles.length > 0) {
+      messageToSend = '(see attached file)';
+    }
+
+    setPrompt('');
+    setAttachedFiles([]);
+    pinAndJumpToBottom();
+
+    try {
+      const res = await sendPromptPi(
+        reqId,
+        messageToSend,
+        imageAttachments.length > 0 ? imageAttachments : undefined
+      );
+      if (!res?.id) {
+        throw new Error('Backend response missing required request ID');
+      }
+      dispatch({
+        type: 'PROMPT_ACCEPTED',
+        payload: { id: res.id },
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      dispatch({
+        type: 'PROMPT_REJECTED',
+        payload: { id: reqId, error: msg },
+      });
+    }
+  };
+
+  const handleAbort = async () => {
+    if (!isBusy) return;
+    const targetPromptId = pendingPromptId;
+    dispatch({ type: 'ABORT_CLICKED' });
+    try {
+      await abortPi();
+    } catch {
+      // Ignored
+    } finally {
+      dispatch({
+        type: 'ABORT_COMPLETED',
+        payload: { promptId: targetPromptId },
+      });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend(e);
+    }
+  };
+
+  return {
+    prompt,
+    setPrompt,
+    attachedFiles,
+    addAttachedFiles,
+    removeAttachedFile,
+    clearAttachedFiles,
+    handleSend,
+    handleAbort,
+    handleKeyDown,
+  };
+}

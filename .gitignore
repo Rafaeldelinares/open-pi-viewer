@@ -1,0 +1,34 @@
+# Local Pi runtime state
+.atl/
+
+# Dependencies
+node_modules/
+
+# Production build artifacts
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor and OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+/resources
+/.pi
+/odd

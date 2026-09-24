@@ -1,0 +1,6 @@
+{
+  "active_profile": "AGY P1",
+  "default_effort": "high",
+  "default_model": "cpam/agy_p1/gemini-3.8-flash-high",
+  "model_profiles": {}
+}

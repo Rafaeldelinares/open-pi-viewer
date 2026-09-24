@@ -1,0 +1,529 @@
+/* Extensions & Packages View Styles */
+:root {
+  --ext-badge-bg: var(--bg-subtle);
+  --ext-badge-fg: var(--fg-muted);
+  --ext-card-bg: var(--bg-surface);
+}
+
+.ext-reload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ext-reload-btn svg.spin {
+  animation: ext-spin 1s linear infinite;
+}
+
+@keyframes ext-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ext-view-body {
+  /* Inherits shared body layout from .settings-view-body */
+}
+
+/* Notice Banner */
+.ext-notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: rgba(56, 139, 253, 0.08);
+  border: 1px solid rgba(56, 139, 253, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--fg-default);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ext-notice-icon {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Success Banner */
+.ext-success-banner {
+  background-color: var(--status-green-bg, rgba(63, 185, 80, 0.12));
+  border-color: var(--status-green-border, rgba(63, 185, 80, 0.3));
+  color: var(--fg-default);
+}
+
+/* Toolbar: Search & Stats */
+.ext-toolbar {
+  flex-wrap: wrap;
+}
+
+.ext-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+}
+
+.ext-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+
+.ext-search-input {
+  width: 100%;
+  padding: 7px 32px 7px 32px;
+  background-color: var(--bg-input, var(--bg-canvas));
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  color: var(--fg-default);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ext-search-input:focus {
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.ext-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ext-search-clear:hover {
+  color: var(--fg-default);
+}
+
+.ext-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ext-stat-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: 12px;
+  color: var(--fg-muted);
+}
+
+.ext-stat-pill.ext-stat-active {
+  background-color: var(--status-green-bg, rgba(63, 185, 80, 0.12));
+  border-color: var(--status-green-border, rgba(63, 185, 80, 0.3));
+  color: var(--status-green);
+}
+
+/* Empty & Loading States */
+.ext-loading-state,
+.ext-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 12px;
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-muted);
+  border-radius: var(--radius-md);
+}
+
+.ext-empty-icon {
+  color: var(--fg-subtle);
+}
+
+.ext-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-default);
+  margin: 0;
+}
+
+.ext-empty-desc {
+  font-size: 13px;
+  color: var(--fg-muted);
+  max-width: 480px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.ext-no-results {
+  padding: 32px 16px;
+}
+
+/* Resource Grid & Cards */
+.ext-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ext-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.15s ease;
+}
+
+.ext-card:hover {
+  border-color: var(--border-default);
+}
+
+.ext-card.ext-card-disabled {
+  opacity: 0.85;
+}
+
+.ext-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ext-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ext-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-default);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.ext-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ext-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 10px;
+  line-height: 1.2;
+}
+
+.ext-badge-scope {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  color: var(--fg-muted);
+}
+
+.ext-badge-scope-project {
+  background-color: rgba(56, 139, 253, 0.12);
+  border-color: rgba(56, 139, 253, 0.35);
+  color: var(--accent-primary);
+}
+
+.ext-badge-kind {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  color: var(--fg-muted);
+}
+
+.ext-badge-kind-extension {
+  background-color: rgba(163, 113, 247, 0.12);
+  border-color: rgba(163, 113, 247, 0.35);
+  color: #a371f7;
+}
+
+.ext-badge-kind-package {
+  background-color: rgba(240, 136, 62, 0.12);
+  border-color: rgba(240, 136, 62, 0.35);
+  color: #f0883e;
+}
+
+.ext-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ext-toggle-area {
+  display: flex;
+  align-items: center;
+}
+
+.ext-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.ext-toggle-label.ext-toggling {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ext-status-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ext-status-pill.active {
+  color: var(--status-green);
+  background-color: var(--status-green-bg, rgba(63, 185, 80, 0.12));
+}
+
+.ext-status-pill.inactive {
+  color: var(--fg-muted);
+  background-color: var(--bg-subtle);
+}
+
+.ext-toggle-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.ext-toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: 9px;
+  transition: all 0.2s ease;
+}
+
+.ext-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  background-color: var(--fg-muted);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.ext-toggle-checkbox:checked + .ext-toggle-slider {
+  background-color: var(--status-green);
+  border-color: var(--status-green);
+}
+
+.ext-toggle-checkbox:checked + .ext-toggle-slider::after {
+  transform: translateX(16px);
+  background-color: #ffffff;
+}
+
+.ext-toggle-checkbox:focus-visible + .ext-toggle-slider {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.ext-delete-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ext-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ext-card-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ext-source-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ext-code-block {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  color: var(--fg-default);
+  word-break: break-all;
+}
+
+.ext-card-path {
+  font-size: 11px;
+  color: var(--fg-subtle);
+}
+
+.ext-path-text {
+  font-family: var(--font-mono, monospace);
+}
+
+/* Modal Container & Dialog */
+.modal-container.ext-modal {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Modal Radio Cards */
+.ext-radio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .ext-radio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ext-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ext-radio-card:hover:not(.disabled) {
+  border-color: var(--border-default);
+  background-color: var(--bg-subtle);
+}
+
+.ext-radio-card.selected {
+  border-color: var(--accent-primary);
+  background-color: rgba(56, 139, 253, 0.05);
+}
+
+.ext-radio-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ext-radio-card input[type='radio'] {
+  margin-top: 2px;
+}
+
+.ext-radio-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ext-radio-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-default);
+}
+
+.ext-radio-card-desc {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.35;
+}
+
+/* Modal Checkbox Card */
+.ext-checkbox-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ext-checkbox-card:hover:not(.disabled) {
+  border-color: var(--border-default);
+  background-color: var(--bg-subtle);
+}
+
+.ext-checkbox-card.checked {
+  border-color: var(--accent-primary);
+  background-color: rgba(56, 139, 253, 0.05);
+}
+
+.ext-checkbox-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ext-checkbox-card input[type='checkbox'] {
+  margin-top: 2px;
+}
+
+.ext-checkbox-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ext-checkbox-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-default);
+}
+
+.ext-checkbox-card-desc {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.35;
+}
+
+.ext-source-input {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}

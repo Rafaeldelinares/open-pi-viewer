@@ -1,0 +1,171 @@
+/* Design Tokens & Theme Palettes */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-canvas: #0d1117;
+  --bg-surface: #161b22;
+  --bg-elevated: #1c2128;
+  --text-primary: #e6edf3;
+  --bg-subtle: #21262d;
+  --bg-subtle-hover: #30363d;
+  --bg-input: #0d1117;
+  --bg-input-disabled: #12161c;
+  --bg-chat-viewport: rgba(22, 27, 34, 0.4);
+
+  --border-muted: #30363d;
+  --border-subtle: #21262d;
+  --border-active: #58a6ff;
+  --border-settings: rgba(88, 166, 255, 0.4);
+
+  --fg-default: #e6edf3;
+  --fg-muted: #8b949e;
+  --fg-subtle: #6e7681;
+
+  --accent-primary: #1f6feb;
+  --accent-primary-hover: #388bfd;
+  --accent-primary-fg: #ffffff;
+  --btn-primary-border: rgba(240, 246, 252, 0.1);
+
+  --status-amber: #d29922;
+  --status-amber-bg: rgba(210, 153, 34, 0.12);
+  --status-amber-border: rgba(210, 153, 34, 0.3);
+  --status-amber-fg: #f0b732;
+
+  --status-green: #3fb950;
+  --status-green-bg: rgba(63, 185, 80, 0.12);
+  --status-green-border: rgba(63, 185, 80, 0.3);
+
+  --status-red: #f85149;
+  --status-red-bg: rgba(248, 81, 73, 0.12);
+  --status-red-border: rgba(248, 81, 73, 0.3);
+
+  --bg-user-bubble: #161f2e;
+  --border-user-bubble: #1f3a5f;
+
+  --focus-ring: rgba(31, 111, 235, 0.25);
+
+  --btn-stop-bg: rgba(248, 81, 73, 0.15);
+  --btn-stop-border: rgba(248, 81, 73, 0.3);
+  --btn-stop-fg: #f85149;
+  --btn-stop-hover-bg: rgba(248, 81, 73, 0.3);
+
+  --btn-dismiss-hover-bg: rgba(255, 255, 255, 0.1);
+
+  --md-code-bg: #161b22;
+  --md-code-header-bg: #1f242c;
+  --md-code-border: #30363d;
+  --md-code-fg: #e6edf3;
+  --md-inline-code-bg: rgba(110, 118, 129, 0.2);
+  --md-inline-code-fg: #f0f6fc;
+  --md-inline-code-border: rgba(240, 246, 252, 0.15);
+  --md-link-fg: #58a6ff;
+  --md-link-hover: #79b8ff;
+  --md-link-dest-fg: #8b949e;
+  --md-scrollbar-thumb: #30363d;
+  --md-scrollbar-thumb-hover: #484f58;
+
+  --activity-card-bg: #161b22;
+  --activity-card-border: #30363d;
+  --activity-card-header-bg: #21262d;
+  --activity-card-header-hover: #282e37;
+  --activity-card-fg: #e6edf3;
+  --activity-badge-bg: rgba(110, 118, 129, 0.2);
+  --activity-badge-fg: #8b949e;
+  --activity-badge-border: rgba(240, 246, 252, 0.1);
+  --thinking-card-bg: rgba(56, 139, 253, 0.04);
+  --thinking-card-border: rgba(56, 139, 253, 0.2);
+  --thinking-card-fg: #8b949e;
+  --thinking-text-fg: #adbac7;
+  --tool-output-bg: #0d1117;
+  --tool-output-border: #30363d;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-canvas: #f6f8fa;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --text-primary: #1f2328;
+  --bg-subtle: #eaeef2;
+  --bg-subtle-hover: #d0d7de;
+  --bg-input: #ffffff;
+  --bg-input-disabled: #f3f4f6;
+  --bg-chat-viewport: rgba(234, 238, 242, 0.5);
+
+  --border-muted: #d0d7de;
+  --border-subtle: #e1e4e8;
+  --border-active: #0969da;
+  --border-settings: rgba(9, 105, 218, 0.4);
+
+  --fg-default: #1f2328;
+  --fg-muted: #656d76;
+  --fg-subtle: #8c959f;
+
+  --accent-primary: #0969da;
+  --accent-primary-hover: #0858b9;
+  --accent-primary-fg: #ffffff;
+  --btn-primary-border: rgba(9, 105, 218, 0.1);
+
+  --status-amber: #9a6700;
+  --status-amber-bg: rgba(212, 167, 44, 0.15);
+  --status-amber-border: rgba(154, 103, 0, 0.35);
+  --status-amber-fg: #7d5300;
+
+  --status-green: #1a7f37;
+  --status-green-bg: rgba(46, 160, 67, 0.12);
+  --status-green-border: rgba(46, 160, 67, 0.3);
+
+  --status-red: #cf222e;
+  --status-red-bg: rgba(207, 34, 46, 0.12);
+  --status-red-border: rgba(207, 34, 46, 0.3);
+
+  --bg-user-bubble: #ddf4ff;
+  --border-user-bubble: #54aeff;
+
+  --focus-ring: rgba(9, 105, 218, 0.25);
+
+  --btn-stop-bg: rgba(207, 34, 46, 0.1);
+  --btn-stop-border: rgba(207, 34, 46, 0.3);
+  --btn-stop-fg: #cf222e;
+  --btn-stop-hover-bg: rgba(207, 34, 46, 0.2);
+
+  --btn-dismiss-hover-bg: rgba(0, 0, 0, 0.08);
+
+  --md-code-bg: #f6f8fa;
+  --md-code-header-bg: #eaeef2;
+  --md-code-border: #d0d7de;
+  --md-code-fg: #1f2328;
+  --md-inline-code-bg: rgba(175, 184, 193, 0.2);
+  --md-inline-code-fg: #1f2328;
+  --md-inline-code-border: rgba(31, 35, 40, 0.15);
+  --md-link-fg: #0969da;
+  --md-link-hover: #0550ae;
+  --md-link-dest-fg: #656d76;
+  --md-scrollbar-thumb: #d0d7de;
+  --md-scrollbar-thumb-hover: #afb8c1;
+
+  --activity-card-bg: #ffffff;
+  --activity-card-border: #d0d7de;
+  --activity-card-header-bg: #f6f8fa;
+  --activity-card-header-hover: #eaeef2;
+  --activity-card-fg: #1f2328;
+  --activity-badge-bg: rgba(175, 184, 193, 0.2);
+  --activity-badge-fg: #656d76;
+  --activity-badge-border: rgba(31, 35, 40, 0.1);
+  --thinking-card-bg: rgba(9, 105, 218, 0.03);
+  --thinking-card-border: rgba(9, 105, 218, 0.2);
+  --thinking-card-fg: #656d76;
+  --thinking-text-fg: #424a53;
+  --tool-output-bg: #f6f8fa;
+  --tool-output-border: #d0d7de;
+}
+

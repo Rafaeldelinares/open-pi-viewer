@@ -1,0 +1,582 @@
+/* ==========================================================================
+   Project Dock
+   ========================================================================== */
+
+.project-dock-container {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  height: 100%;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 25;
+}
+
+.project-dock {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 52px;
+  height: 100%;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-muted);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.project-dock:hover,
+.project-dock.is-expanded {
+  width: 250px;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+}
+
+.project-dock-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+  border-radius: var(--radius-md, 8px);
+  transition: background-color 0.15s ease;
+  user-select: none;
+  min-height: 46px;
+}
+
+.project-row:hover {
+  background-color: var(--bg-subtle-hover, rgba(255, 255, 255, 0.04));
+}
+
+.project-row.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background-color: var(--accent-primary);
+  border-radius: 0 3px 3px 0;
+}
+
+.project-tile {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  transition: all 0.15s ease;
+  color: var(--text-primary, var(--fg-default));
+  outline: none;
+  flex-shrink: 0;
+}
+
+.project-tile:hover {
+  background-color: var(--bg-subtle-hover);
+  border-color: var(--border-muted);
+  transform: translateY(-1px);
+}
+
+.project-tile:focus-visible {
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.project-tile.is-active {
+  background-color: var(--bg-subtle-hover);
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 1px var(--border-active);
+}
+
+.project-monogram {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Status Pip / Dot */
+.project-status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-surface);
+  box-sizing: content-box;
+  pointer-events: none;
+}
+
+.project-status-dot.status-ready {
+  background-color: var(--status-green);
+  box-shadow: 0 0 4px rgba(63, 185, 80, 0.4);
+}
+
+.project-status-dot.status-busy {
+  background-color: var(--accent-primary);
+  animation: project-pulse-busy 1.6s infinite ease-in-out;
+}
+
+.project-status-dot.status-connecting {
+  background-color: var(--status-amber);
+  animation: project-pulse-yellow 1.2s infinite ease-in-out;
+}
+
+.project-status-dot.status-error {
+  background-color: var(--status-red);
+  box-shadow: 0 0 4px rgba(248, 81, 73, 0.4);
+}
+
+.project-status-dot.status-offline {
+  background-color: var(--fg-subtle);
+  opacity: 0.7;
+}
+
+.project-status-dot.status-inactive {
+  background-color: var(--border-muted);
+  opacity: 0.5;
+}
+
+/* Animations */
+@keyframes project-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.65;
+  }
+}
+
+@keyframes project-pulse-busy {
+  0%, 100% {
+    background-color: var(--accent-primary);
+    box-shadow: 0 0 4px rgba(31, 111, 235, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    background-color: var(--status-amber);
+    box-shadow: 0 0 8px rgba(210, 153, 34, 0.85);
+    transform: scale(1.2);
+  }
+}
+
+@keyframes project-pulse-yellow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(210, 153, 34, 0.5);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+    box-shadow: 0 0 1px rgba(210, 153, 34, 0.15);
+  }
+}
+
+/* Project Details (expanded state) */
+.project-details {
+  flex: 1;
+  min-width: 0;
+  margin-left: 8px;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease-in-out;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.project-dock:hover .project-details,
+.project-dock.is-expanded .project-details {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.22s ease-in-out 0.05s;
+}
+
+.project-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, var(--fg-default));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.project-status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.project-status-dot-sm {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.project-status-dot-sm.status-ready {
+  background-color: var(--status-green);
+}
+
+.project-status-dot-sm.status-busy {
+  background-color: var(--accent-primary);
+  animation: project-pulse-busy 1.6s infinite ease-in-out;
+}
+
+.project-status-dot-sm.status-connecting {
+  background-color: var(--status-amber);
+  animation: project-pulse-yellow 1.2s infinite ease-in-out;
+}
+
+.project-status-dot-sm.status-error {
+  background-color: var(--status-red);
+}
+
+.project-status-dot-sm.status-offline {
+  background-color: var(--fg-subtle);
+  opacity: 0.7;
+}
+
+.project-status-dot-sm.status-inactive {
+  background-color: var(--border-muted);
+  opacity: 0.5;
+}
+
+.project-path-text {
+  font-size: 11px;
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Action Buttons (Rename, Remove) */
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.project-row:hover .project-actions,
+.project-row:focus-within .project-actions {
+  opacity: 1;
+}
+
+.project-action-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.project-action-btn:hover {
+  background-color: var(--bg-subtle-hover);
+  color: var(--fg-default);
+  border-color: var(--border-muted);
+}
+
+.project-action-remove:hover {
+  background-color: var(--status-red-bg, rgba(248, 81, 73, 0.12));
+  color: var(--status-red);
+  border-color: var(--status-red-border, rgba(248, 81, 73, 0.3));
+}
+
+/* Inline Rename */
+.project-inline-rename {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.project-rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  font-size: 12px;
+  border-radius: var(--radius-sm, 4px);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-active);
+  color: var(--text-primary, var(--fg-default));
+  outline: none;
+  box-sizing: border-box;
+}
+
+.project-rename-input:focus {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.project-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.project-btn-save {
+  color: var(--status-green);
+}
+
+.project-btn-save:hover {
+  background-color: rgba(63, 185, 80, 0.15);
+  color: var(--status-green);
+  border-color: rgba(63, 185, 80, 0.3);
+}
+
+.project-btn-cancel {
+  color: var(--fg-muted);
+}
+
+.project-btn-cancel:hover {
+  background-color: var(--bg-subtle-hover);
+  color: var(--fg-default);
+}
+
+/* Remove Confirm */
+.project-inline-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.project-confirm-prompt {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.project-confirm-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-confirm-btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.3;
+}
+
+.project-confirm-btn.project-btn-danger {
+  background-color: var(--status-red);
+  border: 1px solid transparent;
+  color: #ffffff;
+}
+
+.project-confirm-btn.project-btn-danger:hover {
+  opacity: 0.9;
+}
+
+.project-confirm-btn.project-btn-cancel {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-muted);
+  color: var(--fg-default);
+}
+
+.project-confirm-btn.project-btn-cancel:hover {
+  background-color: var(--bg-subtle-hover);
+}
+
+/* Busy Notice */
+.project-busy-notice {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--status-amber-fg, #f0b732);
+  background-color: var(--status-amber-bg, rgba(210, 153, 34, 0.12));
+  border: 1px solid var(--status-amber-border, rgba(210, 153, 34, 0.3));
+  border-radius: var(--radius-sm, 4px);
+  padding: 2px 4px;
+  margin-top: 2px;
+  white-space: normal;
+}
+
+/* Footer (Add Project & Settings) */
+.project-dock-footer {
+  width: 100%;
+  padding: 8px 0 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.project-footer-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-md, 8px);
+  color: var(--fg-muted);
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  outline: none;
+  user-select: none;
+}
+
+.project-footer-row:hover {
+  background-color: var(--bg-subtle-hover, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, var(--fg-default));
+}
+
+.project-footer-row:hover .project-tile-add {
+  background-color: var(--bg-subtle-hover);
+  border-color: var(--border-active);
+  color: var(--accent-primary);
+}
+
+.project-footer-row:hover .project-tile-settings {
+  background-color: var(--bg-subtle-hover);
+  border-color: var(--border-active);
+  color: var(--accent-primary);
+}
+
+.project-footer-row.is-active,
+.project-footer-row.is-active:hover {
+  background-color: var(--bg-subtle-hover, rgba(255, 255, 255, 0.04));
+  color: var(--accent-primary);
+}
+
+.project-footer-row:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.project-tile-add {
+  background-color: transparent;
+  border: 1px dashed var(--border-muted);
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.project-tile-settings {
+  background-color: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.project-tile-settings.is-active {
+  background-color: var(--bg-subtle-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.project-add-label,
+.project-settings-label {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease-in-out;
+}
+
+.project-dock:hover .project-add-label,
+.project-dock.is-expanded .project-add-label,
+.project-dock:hover .project-settings-label,
+.project-dock.is-expanded .project-settings-label {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.22s ease-in-out 0.05s;
+}
+
+.workspace-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
