@@ -419,6 +419,23 @@ export class GentleMeshClient {
         break;
       }
 
+      case 'token':
+      case 'text': {
+        const text = typeof payload.text === 'string' ? payload.text : '';
+        if (text) {
+          appendDelta(text);
+          this.callbacks.onEvent?.({
+            type: 'message_update',
+            assistantMessageEvent: {
+              type: 'text_delta',
+              delta: text,
+            },
+            cwd,
+          });
+        }
+        break;
+      }
+
       case 'tool_call': {
         const callId = typeof payload.call_id === 'string' ? payload.call_id : '';
         const tool = typeof payload.tool === 'string' ? payload.tool : '';
@@ -453,7 +470,7 @@ export class GentleMeshClient {
           : typeof payload.result === 'string'
             ? payload.result
             : '';
-        if (text) {
+        if (text && !_accumulatedText) {
           appendDelta(text);
           this.callbacks.onEvent?.({
             type: 'message_update',
