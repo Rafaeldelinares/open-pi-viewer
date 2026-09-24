@@ -578,6 +578,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     setSettingsDraft((prev) => ({
                       ...prev,
                       connectionType: val as 'local' | 'mesh',
+                      meshCoordinatorUrl: val === 'mesh' ? (prev.meshCoordinatorUrl || 'http://localhost:8080') : prev.meshCoordinatorUrl,
                     }))
                   }
                   options={[
@@ -734,7 +735,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     }
                     placeholder={t('settings.cwd_placeholder')}
                     title={t('settings.cwd_title')}
-                    required
+                    required={settingsDraft.connectionType !== 'mesh'}
                   />
                   <button
                     type="button"
